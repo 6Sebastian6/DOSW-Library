@@ -1,7 +1,9 @@
 package edu.eci.dosw.tdd.core.service;
 
+
 import edu.eci.dosw.tdd.core.model.User;
 import edu.eci.dosw.tdd.core.util.IdGeneratorUtil;
+import edu.eci.dosw.tdd.core.validator.UserValidator;
 import edu.eci.dosw.tdd.exception.UserNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -25,12 +27,14 @@ public class UserService {
     }
 
     public User createUser(User user) {
+        UserValidator.validate(user);
         user.setId(IdGeneratorUtil.generateUserId());
         users.add(user);
         return user;
     }
 
     public User updateUser(String id, User userDetails) {
+        UserValidator.validate(userDetails);
         User user = getUserById(id);
         user.setName(userDetails.getName());
         return user;

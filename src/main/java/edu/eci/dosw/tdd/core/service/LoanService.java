@@ -3,7 +3,9 @@ package edu.eci.dosw.tdd.core.service;
 import edu.eci.dosw.tdd.core.model.*;
 import edu.eci.dosw.tdd.core.util.DateUtil;
 import edu.eci.dosw.tdd.core.util.IdGeneratorUtil;
+import edu.eci.dosw.tdd.exception.BookNotAvailableException;
 import edu.eci.dosw.tdd.exception.LoanLimitExceededException;
+import edu.eci.dosw.tdd.exception.LoanNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -30,7 +32,7 @@ public class LoanService {
         return loans.stream()
                 .filter(loan -> loan.getId().equals(id))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Préstamo no encontrado con ID: " + id));
+                .orElseThrow(() -> new LoanNotFoundException("Préstamo no encontrado con ID: " + id));
     }
 
     public Loan createLoan(String userId, String bookId) {
@@ -46,7 +48,7 @@ public class LoanService {
         Book book = bookService.getBookById(bookId);
 
         if (book.getAvailableCopies() <= 0) {
-            throw new RuntimeException("No hay ejemplares disponibles del libro");
+            throw new BookNotAvailableException("No hay ejemplares disponibles del libro: " + book.getTitle());
         }
 
         Loan loan = new Loan();
@@ -67,7 +69,7 @@ public class LoanService {
         Loan loan = getLoanById(loanId);
 
         if (loan.getStatus() == Status.RETURN) {
-            throw new RuntimeException("El libro ya fue devuelto");
+            throw new IllegalArgumentException("El libro ya fue devuelto");
         }
 
         loan.setReturnDate(LocalDate.now());

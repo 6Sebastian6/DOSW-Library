@@ -2,6 +2,7 @@ package edu.eci.dosw.tdd.core.service;
 
 import edu.eci.dosw.tdd.core.model.Book;
 import edu.eci.dosw.tdd.core.util.IdGeneratorUtil;
+import edu.eci.dosw.tdd.core.validator.BookValidator;
 import edu.eci.dosw.tdd.exception.BookNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,7 @@ public class BookService {
     }
 
     public Book createBook(Book book) {
+        BookValidator.validate(book);
         book.setId(IdGeneratorUtil.generateBookId());
         book.setAvailableCopies(book.getTotalCopies());
         books.put(book.getId(), book);
@@ -34,6 +36,7 @@ public class BookService {
     }
 
     public Book updateBook(String id, Book bookDetails) {
+        BookValidator.validate(bookDetails);
         Book book = getBookById(id);
         book.setTitle(bookDetails.getTitle());
         book.setAuthor(bookDetails.getAuthor());
