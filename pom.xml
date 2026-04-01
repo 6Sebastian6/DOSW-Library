@@ -13,6 +13,7 @@
 		<relativePath/>
 	</parent>
 
+
 	<groupId>edu.eci.dosw</groupId>
 	<artifactId>DOSW-Library</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -26,7 +27,13 @@
 		</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 
+
 	<dependencies>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-mongodb</artifactId>
+		</dependency>
 
 		<!-- Spring Boot Web -->
 		<dependency>

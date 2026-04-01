@@ -17,8 +17,8 @@ public class UserMapper {
         if (userDTO == null) return null;
 
         return new User(
-                userDTO.getId(),
-                userDTO.getName()
+                userDTO.getName(),
+                userDTO.getId()
         );
     }
 }

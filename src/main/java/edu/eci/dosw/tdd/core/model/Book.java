@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;// Esto genera un constructor vacio
 @NoArgsConstructor
 @AllArgsConstructor
 public class Book {
+    private String Id;
     private String title;
     private String author;
-    private String Id;
     private int totalCopies;//Se agrego el total de copias
     private int availableCopies;//Se agrego para saber los disponibles
 }
