@@ -144,4 +144,4 @@ En este caso tenemos dos paquetes, uno que es el core que se encarga de toda la 
 
 El analisis con JaCoCo nos muestra
 
-![]()
+![](https://github.com/6Sebastian6/DOSW-Library/blob/featureNorelacional/Imagenes/Cobertura.png)
