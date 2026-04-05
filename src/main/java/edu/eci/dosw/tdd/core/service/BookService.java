@@ -4,67 +4,75 @@ import edu.eci.dosw.tdd.core.model.Book;
 import edu.eci.dosw.tdd.core.util.IdGeneratorUtil;
 import edu.eci.dosw.tdd.core.validator.BookValidator;
 import edu.eci.dosw.tdd.exception.BookNotFoundException;
+import edu.eci.dosw.tdd.persistence.entity.BookEntity;
+import edu.eci.dosw.tdd.persistence.mapper.BookEntityMapper;
+import edu.eci.dosw.tdd.persistence.repository.BookRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class BookService {
 
-    private final Map<String, Book> books = new HashMap<>();
+    private final BookRepository bookRepository;
+
+    public BookService(BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
+    }
 
     public List<Book> getAllBooks() {
-        return books.values().stream().toList();
+        return bookRepository.findAll().stream()
+                .map(BookEntityMapper::toDomain)
+                .toList();
     }
 
     public Book getBookById(String id) {
-        Book book = books.get(id);
-        if (book == null) {
-            throw new BookNotFoundException("Libro no encontrado con ID: " + id);
-        }
-        return book;
+        return bookRepository.findById(id)
+                .map(BookEntityMapper::toDomain)
+                .orElseThrow(() -> new BookNotFoundException("Libro no encontrado con ID: " + id));
     }
 
     public Book createBook(Book book) {
         BookValidator.validate(book);
         book.setId(IdGeneratorUtil.generateBookId());
         book.setAvailableCopies(book.getTotalCopies());
-        books.put(book.getId(), book);
-        return book;
+        BookEntity saved = bookRepository.save(BookEntityMapper.toEntity(book));
+        return BookEntityMapper.toDomain(saved);
     }
 
     public Book updateBook(String id, Book bookDetails) {
         BookValidator.validate(bookDetails);
-        Book book = getBookById(id);
-        book.setTitle(bookDetails.getTitle());
-        book.setAuthor(bookDetails.getAuthor());
+        BookEntity existing = bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException("Libro no encontrado con ID: " + id));
 
-        if (bookDetails.getTotalCopies() != book.getTotalCopies()) {
-            int difference = bookDetails.getTotalCopies() - book.getTotalCopies();
-            book.setTotalCopies(bookDetails.getTotalCopies());
-            book.setAvailableCopies(book.getAvailableCopies() + difference);
+        existing.setTitle(bookDetails.getTitle());
+        existing.setAuthor(bookDetails.getAuthor());
+
+        if (bookDetails.getTotalCopies() != existing.getTotalCopies()) {
+            int difference = bookDetails.getTotalCopies() - existing.getTotalCopies();
+            existing.setTotalCopies(bookDetails.getTotalCopies());
+            existing.setAvailableCopies(existing.getAvailableCopies() + difference);
         }
 
-        return book;
+        return BookEntityMapper.toDomain(bookRepository.save(existing));
     }
 
     public void deleteBook(String id) {
-        if (!books.containsKey(id)) {
+        if (!bookRepository.existsById(id)) {
             throw new BookNotFoundException("Libro no encontrado con ID: " + id);
         }
-        books.remove(id);
+        bookRepository.deleteById(id);
     }
 
     public List<Book> searchBooksByTitle(String title) {
-        return books.values().stream()
-                .filter(book -> book.getTitle().toLowerCase().contains(title.toLowerCase()))
+        return bookRepository.findByTitleContainingIgnoreCase(title).stream()
+                .map(BookEntityMapper::toDomain)
                 .toList();
     }
 
     public boolean isBookAvailable(String id) {
-        Book book = getBookById(id);
-        return book.getAvailableCopies() > 0;
+        return bookRepository.findById(id)
+                .map(b -> b.getAvailableCopies() > 0)
+                .orElseThrow(() -> new BookNotFoundException("Libro no encontrado con ID: " + id));
     }
 }

@@ -1,53 +1,78 @@
 package edu.eci.dosw.tdd.core.service;
 
-
 import edu.eci.dosw.tdd.core.model.User;
 import edu.eci.dosw.tdd.core.util.IdGeneratorUtil;
 import edu.eci.dosw.tdd.core.validator.UserValidator;
 import edu.eci.dosw.tdd.exception.UserNotFoundException;
+import edu.eci.dosw.tdd.persistence.entity.UserEntity;
+import edu.eci.dosw.tdd.persistence.mapper.UserEntityMapper;
+import edu.eci.dosw.tdd.persistence.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class UserService {
 
-    private final List<User> users = new ArrayList<>();
+    private final UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     public List<User> getAllUsers() {
-        return new ArrayList<>(users);
+        return userRepository.findAll().stream()
+                .map(UserEntityMapper::toDomain)
+                .toList();
     }
 
     public User getUserById(String id) {
-        return users.stream()
-                .filter(user -> user.getId().equals(id))
-                .findFirst()
+        return userRepository.findById(id)
+                .map(UserEntityMapper::toDomain)
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con ID: " + id));
     }
 
+    // Usado internamente por Spring Security para cargar credenciales
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .map(UserEntityMapper::toDomainWithPassword)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado: " + username));
+    }
+
     public User createUser(User user) {
-        UserValidator.validate(user);
+        // Valida todos los campos incluyendo password
+        UserValidator.validateForCreate(user);
+
+        if (userRepository.existsByUsername(user.getUsername())) {
+            throw new IllegalArgumentException("El username '" + user.getUsername() + "' ya está en uso");
+        }
+
         user.setId(IdGeneratorUtil.generateUserId());
-        users.add(user);
-        return user;
+        //para la implementacion de seguridad se hara BCrypt aquí
+        UserEntity saved = userRepository.save(UserEntityMapper.toEntity(user));
+        return UserEntityMapper.toDomain(saved);
     }
 
     public User updateUser(String id, User userDetails) {
         UserValidator.validate(userDetails);
-        User user = getUserById(id);
-        user.setName(userDetails.getName());
-        return user;
+
+        UserEntity existing = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con ID: " + id));
+
+        existing.setName(userDetails.getName());
+        return UserEntityMapper.toDomain(userRepository.save(existing));
     }
 
     public void deleteUser(String id) {
-        User user = getUserById(id);
-        users.remove(user);
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException("Usuario no encontrado con ID: " + id);
+        }
+        userRepository.deleteById(id);
     }
 
     public List<User> searchUsersByName(String name) {
-        return users.stream()
-                .filter(user -> user.getName().toLowerCase().contains(name.toLowerCase()))
+        return userRepository.findByNameContainingIgnoreCase(name).stream()
+                .map(UserEntityMapper::toDomain)
                 .toList();
     }
 }
