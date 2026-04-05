@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: DOSW-Library
+
+  # Base de datos PostgreSQL
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dosw_library
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  # JPA / Hibernate
+  jpa:
+    hibernate:
+      # create-drop ? recrea las tablas cada vez que levanta (útil en desarrollo)
+      # update      ? solo agrega columnas nuevas sin borrar datos
+      # validate    ? solo valida que las tablas existan, sin tocarlas (producción)
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+
+# JWT
+jwt:
+  # Clave secreta en Base64 ? cámbiala en producción por una de al menos 256 bits
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  # Tiempo de expiración del token en milisegundos (86400000 = 24 horas)
+  expiration: 86400000
+
+# Swagger / OpenAPI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# Puerto del servidor
+server:
+  port: 8080
+
+---
+# Perfil de TESTS (se activa automáticamente con @SpringBootTest)
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sebas
+    password: hola
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
