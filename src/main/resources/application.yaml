@@ -6,15 +6,15 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/dosw_library
     username: postgres
-    password: postgres
+    password: hola
     driver-class-name: org.postgresql.Driver
 
   # JPA / Hibernate
   jpa:
     hibernate:
-      # create-drop ? recrea las tablas cada vez que levanta (útil en desarrollo)
-      # update      ? solo agrega columnas nuevas sin borrar datos
-      # validate    ? solo valida que las tablas existan, sin tocarlas (producción)
+      # create-drop : crea las tablas de nuevo cada que se utiliza
+      # update      : crea columnas y no borrara los datos que ya se tienen
+      # validate    : esta ve si las tablas existen
       ddl-auto: update
     show-sql: true
     properties:
@@ -25,7 +25,7 @@ spring:
 
 # JWT
 jwt:
-  # Clave secreta en Base64 ? cámbiala en producción por una de al menos 256 bits
+  # Clave secreta en Base64
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
   # Tiempo de expiración del token en milisegundos (86400000 = 24 horas)
   expiration: 86400000
@@ -42,7 +42,7 @@ server:
   port: 8080
 
 ---
-# Perfil de TESTS (se activa automáticamente con @SpringBootTest)
+# Perfil de TESTS
 spring:
   config:
     activate:
@@ -50,8 +50,8 @@ spring:
 
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sebas
-    password: hola
+    username: sa
+    password:
 
   jpa:
     hibernate:
