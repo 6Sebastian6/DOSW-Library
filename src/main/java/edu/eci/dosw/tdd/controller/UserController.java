@@ -6,17 +6,21 @@ import edu.eci.dosw.tdd.core.model.User;
 import edu.eci.dosw.tdd.core.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@Tag(name = "Usuarios", description = "Operaciones sobre usuarios de la biblioteca")
+@PreAuthorize("hasRole('LIBRARIAN')")   // Todos los endpoints de usuarios requieren LIBRARIAN
+@Tag(name = "Usuarios", description = "Gestión de usuarios (solo LIBRARIAN)")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private final UserService userService;
@@ -27,11 +31,11 @@ public class UserController {
 
     @GetMapping
     @Operation(summary = "Obtener todos los usuarios")
-    @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida exitosamente")
+    @ApiResponse(responseCode = "200", description = "Lista de usuarios")
+    @ApiResponse(responseCode = "403", description = "Sin permisos")
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         List<UserDTO> users = userService.getAllUsers().stream()
-                .map(UserMapper::toDTO)
-                .toList();
+                .map(UserMapper::toDTO).toList();
         return ResponseEntity.ok(users);
     }
 
@@ -40,33 +44,31 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "Usuario encontrado")
     @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     public ResponseEntity<UserDTO> getUserById(@PathVariable String id) {
-        User user = userService.getUserById(id);
-        return ResponseEntity.ok(UserMapper.toDTO(user));
+        return ResponseEntity.ok(UserMapper.toDTO(userService.getUserById(id)));
     }
 
     @PostMapping
-    @Operation(summary = "Crear un nuevo usuario")
-    @ApiResponse(responseCode = "201", description = "Usuario creado exitosamente")
+    @Operation(summary = "Registrar un nuevo usuario")
+    @ApiResponse(responseCode = "201", description = "Usuario creado")
     @ApiResponse(responseCode = "400", description = "Datos inválidos")
     public ResponseEntity<UserDTO> createUser(@Valid @RequestBody UserDTO userDTO) {
-        User user = UserMapper.toEntity(userDTO);
-        User createdUser = userService.createUser(user);
-        return new ResponseEntity<>(UserMapper.toDTO(createdUser), HttpStatus.CREATED);
+        User created = userService.createUser(UserMapper.toEntity(userDTO));
+        return new ResponseEntity<>(UserMapper.toDTO(created), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Actualizar un usuario existente")
-    @ApiResponse(responseCode = "200", description = "Usuario actualizado exitosamente")
+    @Operation(summary = "Actualizar un usuario")
+    @ApiResponse(responseCode = "200", description = "Usuario actualizado")
     @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable String id, @Valid @RequestBody UserDTO userDTO) {
-        User user = UserMapper.toEntity(userDTO);
-        User updatedUser = userService.updateUser(id, user);
-        return ResponseEntity.ok(UserMapper.toDTO(updatedUser));
+    public ResponseEntity<UserDTO> updateUser(@PathVariable String id,
+                                              @Valid @RequestBody UserDTO userDTO) {
+        User updated = userService.updateUser(id, UserMapper.toEntity(userDTO));
+        return ResponseEntity.ok(UserMapper.toDTO(updated));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar un usuario")
-    @ApiResponse(responseCode = "204", description = "Usuario eliminado exitosamente")
+    @ApiResponse(responseCode = "204", description = "Usuario eliminado")
     @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     public ResponseEntity<Void> deleteUser(@PathVariable String id) {
         userService.deleteUser(id);
@@ -75,12 +77,9 @@ public class UserController {
 
     @GetMapping("/search")
     @Operation(summary = "Buscar usuarios por nombre")
-    @ApiResponse(responseCode = "200", description = "Resultados de búsqueda")
     public ResponseEntity<List<UserDTO>> searchUsersByName(@RequestParam String name) {
         List<UserDTO> users = userService.searchUsersByName(name).stream()
-                .map(UserMapper::toDTO)
-                .toList();
+                .map(UserMapper::toDTO).toList();
         return ResponseEntity.ok(users);
     }
 }
-

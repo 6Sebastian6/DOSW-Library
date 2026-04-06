@@ -7,6 +7,7 @@ import edu.eci.dosw.tdd.exception.UserNotFoundException;
 import edu.eci.dosw.tdd.persistence.entity.UserEntity;
 import edu.eci.dosw.tdd.persistence.mapper.UserEntityMapper;
 import edu.eci.dosw.tdd.persistence.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,9 +16,11 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<User> getAllUsers() {
@@ -32,7 +35,6 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con ID: " + id));
     }
 
-    // Usado internamente por Spring Security para cargar credenciales
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .map(UserEntityMapper::toDomainWithPassword)
@@ -40,7 +42,6 @@ public class UserService {
     }
 
     public User createUser(User user) {
-        // Valida todos los campos incluyendo password
         UserValidator.validateForCreate(user);
 
         if (userRepository.existsByUsername(user.getUsername())) {
@@ -48,7 +49,9 @@ public class UserService {
         }
 
         user.setId(IdGeneratorUtil.generateUserId());
-        //para la implementacion de seguridad se hara BCrypt aquí
+        // Hashea el password con BCrypt antes de persistir
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
         UserEntity saved = userRepository.save(UserEntityMapper.toEntity(user));
         return UserEntityMapper.toDomain(saved);
     }
